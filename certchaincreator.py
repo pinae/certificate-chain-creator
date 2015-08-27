@@ -60,7 +60,7 @@ def create_certificate_chain():
     if args.organizational_unit and len(args.organizational_unit) > 0:
         organizational_unit_option = "/OU=" + args.organizational_unit
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -x509 -new -nodes " +
-              "-extensions v3_ca_has_san " +
+              "-extensions v3_ca_has_san -utf8 " +
               "-key CA.key -passin pass:" + ca_password + " " +
               "-subj \"/C=" + country + "/ST=" + state + locality_option +
               "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-root\" " +
@@ -69,7 +69,7 @@ def create_certificate_chain():
     os.system("openssl genrsa -aes256 -out intermediate.key -passout pass:" + intermediate_password + " " +
               str(key_size))
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
-              "-sha256 -new -key intermediate.key " +
+              "-sha256 -new -utf8 -key intermediate.key " +
               "-passin pass:" + intermediate_password + " " +
               "-subj \"/C=" + country + "/ST=" + state + locality_option +
               "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-intermediate\" " +
@@ -79,9 +79,9 @@ def create_certificate_chain():
               "-passin pass:" + ca_password + " -in intermediate.csr -out intermediate.pem")
     os.system("openssl verify -CAfile CA.pem intermediate.pem")
     os.system("openssl genrsa -aes256 -out server.key -passout pass:1234 " + str(key_size))
-    os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -sha256 -new " +
+    os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -sha256 -new -utf8 " +
               "-key server.key -passin pass:1234 -subj \"/C=" + country + "/ST=" + state + locality_option +
-              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "\" " +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "/emailAdress=ac@qw.os\" " +
               "-out server.csr")
     os.system("mv server.key server.key.orig")
     os.system("openssl rsa -in server.key.orig -out server.key -passin pass:1234")
