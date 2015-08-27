@@ -53,11 +53,17 @@ def create_certificate_chain():
     os.system("touch demoCA/index.txt")
     os.system("echo 1000 > demoCA/serial")
     os.system("openssl genrsa -aes256 -out CA.key -passout pass:" + ca_password + " " + str(key_size) + "")
+    locality_option = ""
+    if args.locality and len(args.locality) > 0:
+        locality_option = "/L=" + args.locality
+    organizational_unit_option = ""
+    if args.organizational_unit and len(args.organizational_unit) > 0:
+        organizational_unit_option = "/OU=" + args.organizational_unit
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -x509 -new -nodes " +
               "-extensions v3_ca_has_san " +
               "-key CA.key -passin pass:" + ca_password + " " +
-              "-subj \"/C=" + country + "/ST=" + state +
-              "/O=" + company_name + "/CN=" + args.domain + "-CA-root\" " +
+              "-subj \"/C=" + country + "/ST=" + state + locality_option +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-root\" " +
               "-days " + str(days) + " " +
               "-out CA.pem -sha512")
     os.system("openssl genrsa -aes256 -out intermediate.key -passout pass:" + intermediate_password + " " +
@@ -65,8 +71,8 @@ def create_certificate_chain():
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
               "-sha256 -new -key intermediate.key " +
               "-passin pass:" + intermediate_password + " " +
-              "-subj \"/C=" + country + "/ST=" + state +
-              "/O=" + company_name + "/CN=" + args.domain + "-CA-intermediate\" " +
+              "-subj \"/C=" + country + "/ST=" + state + locality_option +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-intermediate\" " +
               "-out intermediate.csr")
     os.system("openssl ca -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
               "-keyfile CA.key -cert CA.pem -extensions v3_ca -notext -md sha256 -batch " +
@@ -74,8 +80,8 @@ def create_certificate_chain():
     os.system("openssl verify -CAfile CA.pem intermediate.pem")
     os.system("openssl genrsa -aes256 -out server.key -passout pass:1234 " + str(key_size))
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -sha256 -new " +
-              "-key server.key -passin pass:1234 -subj \"/C=" + country + "/ST=" + state +
-              "/O=" + company_name + "/CN=" + args.domain + "\" " +
+              "-key server.key -passin pass:1234 -subj \"/C=" + country + "/ST=" + state + locality_option +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "\" " +
               "-out server.csr")
     os.system("mv server.key server.key.orig")
     os.system("openssl rsa -in server.key.orig -out server.key -passin pass:1234")
@@ -103,9 +109,15 @@ if __name__ == "__main__":
     parser.add_argument('--state',
                         type=str,
                         help="State or region. Default is \"Some-State\".")
+    parser.add_argument('--locality',
+                        type=str,
+                        help="City or place.")
     parser.add_argument('--company-name',
                         type=str,
                         help="Company name. Default is the domain.")
+    parser.add_argument('--organizational-unit',
+                        type=str,
+                        help="Name of your unit or team.")
     parser.add_argument('--ca-password',
                         type=str,
                         help="CA key password. If omitted it will be prompted.")
@@ -128,7 +140,7 @@ if __name__ == "__main__":
     if args.state:
         state = args.state
     else:
-        state = "Berlin"
+        state = "Some-State"
     if args.company_name:
         company_name = args.company_name
     else:
