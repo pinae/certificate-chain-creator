@@ -59,11 +59,15 @@ def create_certificate_chain():
     organizational_unit_option = ""
     if args.organizational_unit and len(args.organizational_unit) > 0:
         organizational_unit_option = "/OU=" + args.organizational_unit
+    email_option = ""
+    if args.email and len(args.email) > 0:
+        email_option = "/emailAddress=" + args.email
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -x509 -new -nodes " +
               "-extensions v3_ca_has_san -utf8 " +
               "-key CA.key -passin pass:" + ca_password + " " +
               "-subj \"/C=" + country + "/ST=" + state + locality_option +
-              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-root\" " +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-root" +
+              email_option + "\" " +
               "-days " + str(days) + " " +
               "-out CA.pem -sha512")
     os.system("openssl genrsa -aes256 -out intermediate.key -passout pass:" + intermediate_password + " " +
@@ -72,7 +76,8 @@ def create_certificate_chain():
               "-sha256 -new -utf8 -key intermediate.key " +
               "-passin pass:" + intermediate_password + " " +
               "-subj \"/C=" + country + "/ST=" + state + locality_option +
-              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-intermediate\" " +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "-CA-intermediate" +
+              email_option + "\" " +
               "-out intermediate.csr")
     os.system("openssl ca -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
               "-keyfile CA.key -cert CA.pem -extensions v3_ca -notext -md sha256 -batch " +
@@ -81,7 +86,7 @@ def create_certificate_chain():
     os.system("openssl genrsa -aes256 -out server.key -passout pass:1234 " + str(key_size))
     os.system("openssl req -config " + os.path.abspath("demoCA/openssl.cnf") + " -sha256 -new -utf8 " +
               "-key server.key -passin pass:1234 -subj \"/C=" + country + "/ST=" + state + locality_option +
-              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + "/emailAdress=ac@qw.os\" " +
+              "/O=" + company_name + organizational_unit_option + "/CN=" + args.domain + email_option + "\" " +
               "-out server.csr")
     os.system("mv server.key server.key.orig")
     os.system("openssl rsa -in server.key.orig -out server.key -passin pass:1234")
@@ -89,7 +94,7 @@ def create_certificate_chain():
     os.system("openssl ca -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
               "-keyfile intermediate.key -passin pass:" + intermediate_password + " " +
               "-cert intermediate.pem -extensions v3_ca -notext -md sha256 -batch " +
-              "-days " + str(days) + " -in server.csr -out server.pem ")
+              "-days " + str(days) + " -in server.csr -out server.pem")
     os.system("cat server.pem intermediate.pem CA.pem > chain.pem")
 
 
@@ -118,6 +123,9 @@ if __name__ == "__main__":
     parser.add_argument('--organizational-unit',
                         type=str,
                         help="Name of your unit or team.")
+    parser.add_argument('--email',
+                        type=str,
+                        help="Email.")
     parser.add_argument('--ca-password',
                         type=str,
                         help="CA key password. If omitted it will be prompted.")
@@ -156,4 +164,4 @@ if __name__ == "__main__":
     else:
         intermediate_password = getpass.getpass("Enter pass phrase for intermediate.key: ")
     create_certificate_chain()
-    os.system("rm demoCA/openssl.cnf")
+    #os.system("rm demoCA/openssl.cnf")
