@@ -93,7 +93,7 @@ def create_certificate_chain():
     os.system("rm server.key.orig")
     os.system("openssl ca -config " + os.path.abspath("demoCA/openssl.cnf") + " " +
               "-keyfile intermediate.key -passin pass:" + intermediate_password + " " +
-              "-cert intermediate.pem -extensions v3_ca -notext -md sha256 -batch " +
+              "-cert intermediate.pem -notext -md sha256 -batch " +
               "-days " + str(days) + " -in server.csr -out server.pem")
     os.system("cat server.pem intermediate.pem CA.pem > chain.pem")
 
